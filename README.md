@@ -46,32 +46,6 @@ A modelagem inicial utilizava `custo_por_voto` ($Gasto / Votos$) no Eixo Y, o qu
 <details>
 <summary><b>Query 1: Visão Macro Histórica (2012–2026)</b></summary>
 
-SQL
-SELECT 
-  ano,
-  CASE 
-    WHEN ano IN (2014, 2018, 2022, 2026) THEN 'Eleições Gerais'
-    WHEN ano IN (2012, 2016, 2020, 2024) THEN 'Eleições Municipais'
-  END AS ciclo_eleitoral,
-  CASE 
-    WHEN cpf_cnpj_fornecedor IN (
-      '13347016000117', '13347016000389', '25021356000132', 
-      '14796606000190', '24080493000185', '08965639000113'
-    ) THEN 'Meta'
-    WHEN cpf_cnpj_fornecedor = '06990590000123' THEN 'Google'
-    WHEN cpf_cnpj_fornecedor = '40225615000130' THEN 'Kwai'
-  END AS plataforma,
-  SUM(valor_despesa) AS total_despesa
-FROM `basedosdados.br_tse_eleicoes.despesas_candidato`
-WHERE ano IN (2012, 2014, 2016, 2018, 2020, 2024, 2026)
-  AND cpf_cnpj_fornecedor IN (
-    '13347016000117', '13347016000389', '25021356000132', 
-    '14796606000190', '24080493000185', '08965639000113',
-    '06990590000123', '40225615000130'
-  )
-GROUP BY ano, ciclo_eleitoral, plataforma
-ORDER BY ano DESC, total_despesa DESC;
-
 WITH Gastos_Impulsionamento AS (
   SELECT 
     ano,
@@ -123,7 +97,7 @@ ORDER BY custo_por_voto DESC;
 📊 Dashboard Interativo
 Acesse o painel completo no Looker Studio com filtros dinâmicos por Ano, Estado, Cargo e Partido:
 
-🔗 Visualizar Painel Interativo (https://datastudio.google.com/s/im7-DIrd0Kc)
+[🔗 Visualizar Painel Interativo](https://datastudio.google.com/s/im7-DIrd0Kc)
 
 ✍️ Autor
-Ulisses Miranda — LinkedIn (www.linkedin.com/in/ulisses-miranda/) | Medium (https://medium.com/@ulissesmiranda)
+Ulisses Miranda — [LinkedIn](www.linkedin.com/in/ulisses-miranda/) | [Medium](https://medium.com/@ulissesmiranda)
