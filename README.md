@@ -30,6 +30,7 @@ O objetivo deste projeto é responder a duas questões centrais:
 
 ### 1. Auditoria e os "R$ 100 Milhões Invisíveis"
 Uma consulta direta pelos CNPJs tradicionais da Meta (*13.347.016/0001-17*) ignora uma fatia expressiva dos gastos reais. A auditoria das declarações revelou que milhares de campanhas prestam contas utilizando o CNPJ das instituições de pagamento contratadas pela plataforma para processar boletos e PIX (*dLocal, Adyen, EBANX, PayU*). 
+
 * A inclusão das intermediadoras elevou a apuração real da Meta de valores parciais de ~R$ 290 milhões para **R$ 402,1 milhões** em 2026.
 * O recuo do Google após as eleições de 2022 evidenciou o efeito da política interna de descontinuação de anúncios políticos no país em 2024.
 
@@ -37,15 +38,44 @@ Uma consulta direta pelos CNPJs tradicionais da Meta (*13.347.016/0001-17*) igno
 Na matriz de candidatos (15.054 registros de 2018 e 2022), a discrepância de ordens de magnitude em votos (de dezenas a centenas de milhares) e gastos exigiu a implementação de **Escala Logarítmica (Log-Log)** nos eixos X e Y para eliminar o *overplotting* e permitir a visualização de quadrantes com base nas médias.
 
 ### 3. Independência de Eixos e Eliminação de Correlação Espúria
-A modelagem inicial utilizava `custo_por_voto` ($Gasto / Votos$) no Eixo Y, o que acoplava matematicamente os dois eixos e forçava uma distribuição em rampa descendente. A versão definitiva adotou `gasto_impulsionamento` (Eixo Y) versus `votos` (Eixo X), deslocando o `custo_por_voto` para métricas de *hover* (`Tooltip/Dimensão Composta`) e rankings detalhados de tabela.
+A modelagem inicial utilizava `custo_por_voto` (Gasto / Votos) no Eixo Y, o que acoplava matematicamente os dois eixos e forçava uma distribuição em rampa descendente. A versão definitiva adotou `gasto_impulsionamento` (Eixo Y) versus `votos` (Eixo X), deslocando o `custo_por_voto` para métricas de *hover* (`Tooltip/Dimensão Composta`) e rankings detalhados de tabela.
 
 ---
 
 ## 💻 Códigos SQL (Google BigQuery)
 
-<details>
-<summary><b>Query 1: Visão Macro Histórica (2012–2026)</b></summary>
+### Query 1: Visão Macro Histórica (2012–2026)
 
+```sql
+SELECT 
+  ano,
+  CASE 
+    WHEN ano IN (2014, 2018, 2022, 2026) THEN 'Eleições Gerais'
+    WHEN ano IN (2012, 2016, 2020, 2024) THEN 'Eleições Municipais'
+  END AS ciclo_eleitoral,
+  CASE 
+    WHEN cpf_cnpj_fornecedor IN (
+      '13347016000117', '13347016000389', '25021356000132', 
+      '14796606000190', '24080493000185', '08965639000113'
+    ) THEN 'Meta'
+    WHEN cpf_cnpj_fornecedor = '06990590000123' THEN 'Google'
+    WHEN cpf_cnpj_fornecedor = '40225615000130' THEN 'Kwai'
+  END AS plataforma,
+  SUM(valor_despesa) AS total_despesa
+FROM `basedosdados.br_tse_eleicoes.despesas_candidato`
+WHERE ano IN (2012, 2014, 2016, 2018, 2020, 2022, 2024, 2026)
+  AND cpf_cnpj_fornecedor IN (
+    '13347016000117', '13347016000389', '25021356000132', 
+    '14796606000190', '24080493000185', '08965639000113',
+    '06990590000123', '40225615000130'
+  )
+GROUP BY ano, ciclo_eleitoral, plataforma
+ORDER BY ano DESC, total_despesa DESC;
+```
+
+### Query 2: Funil Micro de Candidatos (15.054 registros)
+
+```sql
 WITH Gastos_Impulsionamento AS (
   SELECT 
     ano,
@@ -93,11 +123,18 @@ WHERE c.ano IN (2018, 2022)
   AND c.sigla_uf != 'BR'
   AND v.total_votos > 0
 ORDER BY custo_por_voto DESC;
+```
 
-📊 Dashboard Interativo
+---
+
+## 📊 Dashboard Interativo
+
 Acesse o painel completo no Looker Studio com filtros dinâmicos por Ano, Estado, Cargo e Partido:
 
-[🔗 Visualizar Painel Interativo](https://datastudio.google.com/s/im7-DIrd0Kc)
+🔗 **[Visualizar Painel Interativo no Looker Studio](https://datastudio.google.com/s/im7-DIrd0Kc)**
 
-✍️ Autor
-Ulisses Miranda — [LinkedIn](www.linkedin.com/in/ulisses-miranda/) | [Medium](https://medium.com/@ulissesmiranda)
+---
+
+## ✍️ Autor
+
+* **Ulisses Miranda** — [LinkedIn](https://www.linkedin.com/in/ulisses-miranda/) | [Medium](https://medium.com/@ulissesmiranda)
